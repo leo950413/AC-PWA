@@ -21,12 +21,11 @@
 <body>
 
   <!-- ════════════════════════════════════════════
-       LOGIN SCREEN
+       SCREEN 1 – LOGIN
   ════════════════════════════════════════════ -->
   <div id="screen-login" class="screen hidden">
     <div class="login-wrap">
 
-      <!-- Brand -->
       <div class="brand">
         <svg class="brand-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
              role="img" aria-label="AC Control logo">
@@ -48,30 +47,25 @@
           <circle cx="32" cy="32" r="5.5" fill="#38bdf8"/>
           <circle cx="32" cy="32" r="3"   fill="#1e293b"/>
         </svg>
-
         <h1>AC Control</h1>
         <p id="brand-subtitle">IoT Air Conditioner Remote</p>
       </div>
 
-      <!-- Login form -->
       <form id="form-login" novalidate>
         <div class="field">
           <label id="label-user" for="inp-user">Username</label>
           <input id="inp-user" type="text" placeholder="admin"
                  autocomplete="username" spellcheck="false" required />
         </div>
-
         <div class="field">
           <label id="label-pass" for="inp-pass">Password</label>
           <input id="inp-pass" type="password" placeholder="••••••••"
                  autocomplete="current-password" required />
         </div>
-
         <button id="btn-login-submit" type="submit" class="btn btn-primary btn-full">
           <span class="btn-label">Sign In</span>
           <span class="btn-spinner hidden" aria-hidden="true"></span>
         </button>
-
         <p id="login-error" class="error-msg hidden" role="alert"></p>
       </form>
 
@@ -79,15 +73,14 @@
   </div>
 
   <!-- ════════════════════════════════════════════
-       CONTROL SCREEN
+       SCREEN 2 – DEVICE DASHBOARD
   ════════════════════════════════════════════ -->
-  <div id="screen-control" class="screen hidden">
+  <div id="screen-devices" class="screen hidden">
 
     <header>
       <div class="header-inner">
         <div class="header-brand">
-          <svg class="header-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
-               aria-hidden="true">
+          <svg class="header-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <g stroke="#38bdf8" stroke-width="5" stroke-linecap="round">
               <line x1="32" y1="9"  x2="32" y2="55"/>
               <line x1="9"  y1="32" x2="55" y2="32"/>
@@ -99,14 +92,55 @@
           </svg>
           <span>
             AC Control
+            <small id="header-user-dash" style="font-weight:400;color:#94a3b8;font-size:0.75rem;display:block;margin-top:1px;"></small>
+          </span>
+        </div>
+        <button id="btn-logout-dash" class="btn btn-ghost" aria-label="Log out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span id="logout-label-dash">Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="devices-main">
+      <div class="devices-wrap">
+        <h2 id="devices-title" class="devices-title">My Devices</h2>
+        <p id="devices-subtitle" class="devices-subtitle">Select a device to control</p>
+        <div id="device-list" class="device-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SCREEN 3 – DEVICE CONTROL
+  ════════════════════════════════════════════ -->
+  <div id="screen-control" class="screen hidden">
+
+    <header>
+      <div class="header-inner">
+        <div class="header-brand">
+          <button id="btn-back" class="btn-back" aria-label="Back to devices">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <span>
+            <span id="header-device-name">Device</span>
             <small id="header-user" style="font-weight:400;color:#94a3b8;font-size:0.75rem;display:block;margin-top:1px;"></small>
           </span>
         </div>
-
         <button id="btn-logout" class="btn btn-ghost" aria-label="Log out">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-               aria-hidden="true">
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
@@ -160,12 +194,9 @@
                     fill="none" stroke="#334155" stroke-width="5"/>
             <rect x="236.5" y="30" width="7" height="14" rx="3.5" fill="#0f172a"/>
             <g id="airflow" class="hidden">
-              <path d="M 210 38 Q 228 33 246 38"
-                    fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M 210 50 Q 228 45 246 50"
-                    fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M 210 62 Q 228 57 246 62"
-                    fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M 210 38 Q 228 33 246 38" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M 210 50 Q 228 45 246 50" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M 210 62 Q 228 57 246 62" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
             </g>
           </svg>
         </div>
@@ -183,7 +214,6 @@
             </svg>
             <span id="btn-on-label">Power On</span>
           </button>
-
           <button id="btn-off" class="btn btn-off" aria-label="Turn air conditioner off">
             <svg class="btn-icon" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2.5"
@@ -195,7 +225,7 @@
           </button>
         </div>
 
-        <!-- Refresh status button -->
+        <!-- Refresh -->
         <div class="btn-row-center">
           <button id="btn-refresh" class="btn btn-ghost btn-refresh" aria-label="Refresh AC status">
             <svg id="refresh-icon" class="btn-icon" viewBox="0 0 24 24" fill="none"
@@ -208,22 +238,19 @@
           </button>
         </div>
 
-        <!-- ── Schedule section ── -->
+        <!-- Schedule section -->
         <div class="schedule-section">
           <h3 id="schedule-title" class="section-title">Schedule</h3>
-
           <div class="schedule-form-row">
             <select id="sched-action" class="sched-select">
               <option value="on"  id="sched-opt-on">Turn On</option>
               <option value="off" id="sched-opt-off">Turn Off</option>
             </select>
-
             <div class="sched-delay-group">
               <input id="sched-delay" type="number" min="1" max="1440" value="30"
                      class="sched-input" inputmode="numeric" />
               <span id="sched-delay-unit" class="sched-unit">min</span>
             </div>
-
             <button id="btn-schedule" class="btn btn-accent">
               <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2.5"
@@ -234,7 +261,6 @@
               <span id="btn-schedule-label">Schedule</span>
             </button>
           </div>
-
           <ul id="schedule-list" class="schedule-list">
             <li id="sched-empty" class="sched-empty">No active schedules</li>
           </ul>
@@ -250,7 +276,7 @@
             <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
             <line x1="12" y1="20" x2="12.01" y2="20"/>
           </svg>
-          192.168.50.248
+          iot-ac.c024.click
         </p>
 
       </div>
@@ -259,16 +285,14 @@
   </div>
 
   <!-- ════════════════════════════════════════════
-       GLOBAL UI ELEMENTS
+       GLOBAL UI
   ════════════════════════════════════════════ -->
-
   <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 
   <div id="loading-overlay" class="hidden" role="progressbar" aria-label="Sending command…">
     <div class="spinner-ring"></div>
   </div>
 
-  <!-- Language switcher -->
   <div id="lang-switcher" class="lang-switcher" role="group" aria-label="Language">
     <button class="lang-btn" data-lang="en">EN</button>
     <button class="lang-btn" data-lang="zh">中文</button>
