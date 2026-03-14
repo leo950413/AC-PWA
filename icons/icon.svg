@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full bleed background (maskable-safe) -->
+  <rect width="512" height="512" fill="#0f172a"/>
+
+  <!-- Snowflake — 6 arms at 60° intervals, content within 80% safe zone -->
+  <g transform="translate(256,256)" stroke="#38bdf8" stroke-linecap="round" stroke-width="26" fill="none">
+    <!-- Main axes -->
+    <line x1="0"      y1="-155" x2="0"      y2="155"/>
+    <line x1="-134.3" y1="-77.5" x2="134.3" y2="77.5"/>
+    <line x1="-134.3" y1="77.5"  x2="134.3" y2="-77.5"/>
+
+    <!-- Branch tips – top -->
+    <line x1="-40" y1="-112" x2="0" y2="-155"/>
+    <line x1="40"  y1="-112" x2="0" y2="-155"/>
+    <!-- Branch tips – bottom -->
+    <line x1="-40" y1="112"  x2="0" y2="155"/>
+    <line x1="40"  y1="112"  x2="0" y2="155"/>
+    <!-- Branch tips – upper-right -->
+    <line x1="98"  y1="-32"  x2="134.3" y2="-77.5"/>
+    <line x1="70"  y1="-84"  x2="134.3" y2="-77.5"/>
+    <!-- Branch tips – lower-left -->
+    <line x1="-98" y1="32"   x2="-134.3" y2="77.5"/>
+    <line x1="-70" y1="84"   x2="-134.3" y2="77.5"/>
+    <!-- Branch tips – upper-left -->
+    <line x1="-98" y1="-32"  x2="-134.3" y2="-77.5"/>
+    <line x1="-70" y1="-84"  x2="-134.3" y2="-77.5"/>
+    <!-- Branch tips – lower-right -->
+    <line x1="98"  y1="32"   x2="134.3"  y2="77.5"/>
+    <line x1="70"  y1="84"   x2="134.3"  y2="77.5"/>
+  </g>
+
+  <!-- Centre gem -->
+  <circle cx="256" cy="256" r="34" fill="#38bdf8"/>
+  <circle cx="256" cy="256" r="19" fill="#0f172a"/>
+</svg>

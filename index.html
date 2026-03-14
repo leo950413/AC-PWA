@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- PWA meta -->
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AC Control" />
+  <meta name="description" content="IoT Air Conditioner Remote Control" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+
+  <title>AC Control</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════
+       LOGIN SCREEN
+  ════════════════════════════════════════════ -->
+  <div id="screen-login" class="screen hidden">
+    <div class="login-wrap">
+
+      <!-- Brand -->
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
+             role="img" aria-label="AC Control logo">
+          <rect width="64" height="64" rx="14" fill="#1e293b"/>
+          <g stroke="#38bdf8" stroke-width="4" stroke-linecap="round">
+            <line x1="32" y1="9"  x2="32" y2="55"/>
+            <line x1="9"  y1="32" x2="55" y2="32"/>
+            <line x1="17" y1="17" x2="47" y2="47"/>
+            <line x1="47" y1="17" x2="17" y2="47"/>
+            <line x1="25" y1="16" x2="32" y2="9"/>
+            <line x1="39" y1="16" x2="32" y2="9"/>
+            <line x1="25" y1="48" x2="32" y2="55"/>
+            <line x1="39" y1="48" x2="32" y2="55"/>
+            <line x1="16" y1="25" x2="9"  y2="32"/>
+            <line x1="16" y1="39" x2="9"  y2="32"/>
+            <line x1="48" y1="25" x2="55" y2="32"/>
+            <line x1="48" y1="39" x2="55" y2="32"/>
+          </g>
+          <circle cx="32" cy="32" r="5.5" fill="#38bdf8"/>
+          <circle cx="32" cy="32" r="3"   fill="#1e293b"/>
+        </svg>
+
+        <h1>AC Control</h1>
+        <p id="brand-subtitle">IoT Air Conditioner Remote</p>
+      </div>
+
+      <!-- Login form -->
+      <form id="form-login" novalidate>
+        <div class="field">
+          <label id="label-user" for="inp-user">Username</label>
+          <input id="inp-user" type="text" placeholder="admin"
+                 autocomplete="username" spellcheck="false" required />
+        </div>
+
+        <div class="field">
+          <label id="label-pass" for="inp-pass">Password</label>
+          <input id="inp-pass" type="password" placeholder="••••••••"
+                 autocomplete="current-password" required />
+        </div>
+
+        <button id="btn-login-submit" type="submit" class="btn btn-primary btn-full">
+          <span class="btn-label">Sign In</span>
+          <span class="btn-spinner hidden" aria-hidden="true"></span>
+        </button>
+
+        <p id="login-error" class="error-msg hidden" role="alert"></p>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       CONTROL SCREEN
+  ════════════════════════════════════════════ -->
+  <div id="screen-control" class="screen hidden">
+
+    <header>
+      <div class="header-inner">
+        <div class="header-brand">
+          <svg class="header-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
+               aria-hidden="true">
+            <g stroke="#38bdf8" stroke-width="5" stroke-linecap="round">
+              <line x1="32" y1="9"  x2="32" y2="55"/>
+              <line x1="9"  y1="32" x2="55" y2="32"/>
+              <line x1="17" y1="17" x2="47" y2="47"/>
+              <line x1="47" y1="17" x2="17" y2="47"/>
+            </g>
+            <circle cx="32" cy="32" r="5.5" fill="#38bdf8"/>
+            <circle cx="32" cy="32" r="3"   fill="#0f172a"/>
+          </svg>
+          <span>
+            AC Control
+            <small id="header-user" style="font-weight:400;color:#94a3b8;font-size:0.75rem;display:block;margin-top:1px;"></small>
+          </span>
+        </div>
+
+        <button id="btn-logout" class="btn btn-ghost" aria-label="Log out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span id="logout-label">Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="control-card">
+
+        <!-- Status pill -->
+        <div class="status-wrap" role="status" aria-live="polite">
+          <span id="status-dot" class="status-dot status-idle" aria-hidden="true"></span>
+          <span id="status-label">Ready</span>
+        </div>
+
+        <!-- AC status grid -->
+        <div id="ac-status-grid" class="ac-status-grid hidden"
+             role="region" aria-label="AC current status">
+          <div class="ac-stat">
+            <span id="stat-label-power" class="ac-stat-label">Power</span>
+            <span id="stat-power" class="ac-stat-val">—</span>
+          </div>
+          <div class="ac-stat">
+            <span id="stat-label-mode" class="ac-stat-label">Mode</span>
+            <span id="stat-mode" class="ac-stat-val">—</span>
+          </div>
+          <div class="ac-stat">
+            <span id="stat-label-temp" class="ac-stat-label">Temp</span>
+            <span id="stat-temp" class="ac-stat-val">—</span>
+          </div>
+          <div class="ac-stat">
+            <span id="stat-label-fan" class="ac-stat-label">Fan</span>
+            <span id="stat-fan" class="ac-stat-val">—</span>
+          </div>
+        </div>
+
+        <!-- AC unit illustration -->
+        <div class="ac-visual" aria-hidden="true">
+          <svg viewBox="0 0 280 100" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="8" width="264" height="84" rx="18" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+            <rect x="14" y="12" width="252" height="22" rx="11" fill="#263553"/>
+            <rect x="18" y="46" width="170" height="7" rx="3.5" fill="#334155"/>
+            <rect x="18" y="59" width="170" height="7" rx="3.5" fill="#334155"/>
+            <rect x="18" y="72" width="170" height="7" rx="3.5" fill="#334155"/>
+            <rect x="200" y="16" width="2" height="70" rx="1" fill="#334155"/>
+            <circle cx="240" cy="50" r="22" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+            <circle id="svg-power-ring" cx="240" cy="50" r="15"
+                    fill="none" stroke="#334155" stroke-width="5"/>
+            <rect x="236.5" y="30" width="7" height="14" rx="3.5" fill="#0f172a"/>
+            <g id="airflow" class="hidden">
+              <path d="M 210 38 Q 228 33 246 38"
+                    fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M 210 50 Q 228 45 246 50"
+                    fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M 210 62 Q 228 57 246 62"
+                    fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+
+        <p id="control-subtitle" class="control-subtitle">Select an action below</p>
+
+        <!-- Power buttons -->
+        <div class="btn-row">
+          <button id="btn-on" class="btn btn-on" aria-label="Turn air conditioner on">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+              <line x1="12" y1="2" x2="12" y2="12"/>
+            </svg>
+            <span id="btn-on-label">Power On</span>
+          </button>
+
+          <button id="btn-off" class="btn btn-off" aria-label="Turn air conditioner off">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+              <line x1="12" y1="2" x2="12" y2="12"/>
+            </svg>
+            <span id="btn-off-label">Power Off</span>
+          </button>
+        </div>
+
+        <!-- Refresh status button -->
+        <div class="btn-row-center">
+          <button id="btn-refresh" class="btn btn-ghost btn-refresh" aria-label="Refresh AC status">
+            <svg id="refresh-icon" class="btn-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            <span id="btn-refresh-label">Refresh Status</span>
+          </button>
+        </div>
+
+        <!-- ── Schedule section ── -->
+        <div class="schedule-section">
+          <h3 id="schedule-title" class="section-title">Schedule</h3>
+
+          <div class="schedule-form-row">
+            <select id="sched-action" class="sched-select">
+              <option value="on"  id="sched-opt-on">Turn On</option>
+              <option value="off" id="sched-opt-off">Turn Off</option>
+            </select>
+
+            <div class="sched-delay-group">
+              <input id="sched-delay" type="number" min="1" max="1440" value="30"
+                     class="sched-input" inputmode="numeric" />
+              <span id="sched-delay-unit" class="sched-unit">min</span>
+            </div>
+
+            <button id="btn-schedule" class="btn btn-accent">
+              <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2.5"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span id="btn-schedule-label">Schedule</span>
+            </button>
+          </div>
+
+          <ul id="schedule-list" class="schedule-list">
+            <li id="sched-empty" class="sched-empty">No active schedules</li>
+          </ul>
+        </div>
+
+        <!-- Gateway address -->
+        <p class="network-info" aria-label="Gateway address">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               width="13" height="13" aria-hidden="true">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+          192.168.50.248
+        </p>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       GLOBAL UI ELEMENTS
+  ════════════════════════════════════════════ -->
+
+  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <div id="loading-overlay" class="hidden" role="progressbar" aria-label="Sending command…">
+    <div class="spinner-ring"></div>
+  </div>
+
+  <!-- Language switcher -->
+  <div id="lang-switcher" class="lang-switcher" role="group" aria-label="Language">
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="zh">中文</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
