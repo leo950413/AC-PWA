@@ -18,7 +18,7 @@ const LANG_KEY = 'ac_lang';
 const i18n = {
   en: {
     // Login
-    appSubtitle:     'IoT Air Conditioner Remote',
+    brandTitle:      'Smart AC Controller',
     labelUser:       'Username',
     labelPass:       'Password',
     btnSignIn:       'Sign In',
@@ -66,6 +66,7 @@ const i18n = {
     schedDelayUnit:  'min',
     schedBtn:        'Schedule',
     schedEmpty:      'No active schedules',
+    schedCreated:    'Schedule created.',
     schedCancelled:  'Schedule cancelled.',
     schedCreateFail: 'Failed to create schedule.',
     schedCancelFail: 'Failed to cancel schedule.',
@@ -74,7 +75,7 @@ const i18n = {
     schedPast:       'executing…',
   },
   zh: {
-    appSubtitle:     '物聯網冷氣遙控',
+    brandTitle:      '智慧冷氣控制器',
     labelUser:       '帳號',
     labelPass:       '密碼',
     btnSignIn:       '登入',
@@ -117,6 +118,7 @@ const i18n = {
     schedDelayUnit:  '分鐘',
     schedBtn:        '排程',
     schedEmpty:      '目前無排程',
+    schedCreated:    '排程已建立。',
     schedCancelled:  '排程已取消。',
     schedCreateFail: '排程建立失敗。',
     schedCancelFail: '排程取消失敗。',
@@ -347,7 +349,7 @@ function applyLang(lang) {
   setText('btn-retry-label',    T.btnRetry);
 
   // Login
-  setText('brand-subtitle',     T.appSubtitle);
+  setText('brand-title',        T.brandTitle);
   setText('label-user',         T.labelUser);
   setText('label-pass',         T.labelPass);
   const btnLabel = document.querySelector('#btn-login-submit .btn-label');
@@ -606,7 +608,7 @@ async function acCommand(command) {
       showToast(t(command === 'on' ? 'toastACOn' : 'toastACOff'), 'success');
       fetchStatus();
     } else {
-      showToast(data.message || 'Command failed', 'error');
+      showToast(t('toastCmdNetwork'), 'error');
     }
   } catch (err) {
     dbg.error('command threw →', err.name, err.message);
@@ -642,11 +644,11 @@ async function createSchedule(action, delayMinutes) {
     }
     const data = await response.json();
     if (data.status === 1) {
-      showToast(data.message, 'success');
+      showToast(t('schedCreated'), 'success');
       fetchSchedules();
       return true;
     }
-    showToast(data.message || t('schedCreateFail'), 'error');
+    showToast(t('schedCreateFail'), 'error');
     return false;
   } catch (err) {
     dbg.error('createSchedule threw →', err.name, err.message);
@@ -688,7 +690,7 @@ async function cancelSchedule(scheduleId) {
       showToast(t('schedCancelled'), 'success');
       fetchSchedules();
     } else {
-      showToast(data.message || t('schedCancelFail'), 'error');
+      showToast(t('schedCancelFail'), 'error');
     }
   } catch (err) {
     dbg.error('cancelSchedule threw →', err.name, err.message);
@@ -785,7 +787,7 @@ formLogin.addEventListener('submit', async e => {
 
     if (data.status !== 1) {
       dbg.error('login rejected →', data.message);
-      showLoginError(data.message || t('errWrongCreds'));
+      showLoginError(t('errWrongCreds'));
       return;
     }
 
