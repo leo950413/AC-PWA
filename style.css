@@ -770,6 +770,30 @@ main {
   padding: 14px 0;
 }
 
+/* ── Bottom logout button ── */
+.btn-logout-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 28px;
+  padding: 10px 0;
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  color: var(--c-subtle);
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--tr), border-color var(--tr);
+}
+
+.btn-logout-bottom:hover {
+  color: var(--c-off);
+  border-color: var(--c-off);
+}
+
 /* Network footer */
 .network-info {
   display: flex;

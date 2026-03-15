@@ -117,15 +117,6 @@
             <small id="header-user-dash" style="font-weight:400;color:#94a3b8;font-size:0.75rem;display:block;margin-top:1px;"></small>
           </span>
         </div>
-        <button id="btn-logout-dash" class="btn btn-ghost" aria-label="Log out">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          <span id="logout-label-dash">Logout</span>
-        </button>
       </div>
     </header>
 
@@ -136,6 +127,16 @@
         <div id="device-list" class="device-grid">
           <!-- Rendered by JS -->
         </div>
+        <button id="btn-logout-dash" class="btn-logout-bottom" aria-label="Log out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               width="14" height="14" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span id="logout-label-dash">登出</span>
+        </button>
       </div>
     </main>
 
@@ -160,15 +161,6 @@
             <small id="header-user" style="font-weight:400;color:#94a3b8;font-size:0.75rem;display:block;margin-top:1px;"></small>
           </span>
         </div>
-        <button id="btn-logout" class="btn btn-ghost" aria-label="Log out">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          <span id="logout-label">Logout</span>
-        </button>
       </div>
     </header>
 
@@ -301,6 +293,17 @@
           iot-ac.c024.click
         </p>
 
+        <button id="btn-logout" class="btn-logout-bottom" aria-label="Log out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               width="14" height="14" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span id="logout-label">登出</span>
+        </button>
+
       </div>
     </main>
 
@@ -316,8 +319,8 @@
   </div>
 
   <div id="lang-switcher" class="lang-switcher" role="group" aria-label="Language">
-    <button class="lang-btn" data-lang="en">EN</button>
     <button class="lang-btn" data-lang="zh">中文</button>
+    <button class="lang-btn" data-lang="en">EN</button>
   </div>
 
   <script src="app.js"></script>

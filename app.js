@@ -129,7 +129,8 @@ const i18n = {
 };
 
 function currentLang() {
-  return localStorage.getItem(LANG_KEY) === 'zh' ? 'zh' : 'en';
+  const stored = localStorage.getItem(LANG_KEY);
+  return stored === 'en' ? 'en' : 'zh'; // default: zh
 }
 
 function t(key, ...args) {
