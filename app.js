@@ -48,6 +48,9 @@ const i18n = {
     errWrongCreds:   'Invalid credentials.',
     errNoNetwork:    'Cannot reach the server. Check your network.',
     errLoginFail:    'Login failed. Please try again.',
+    serverOffline:   'Server unavailable',
+    serverOfflineMsg:'Unable to connect to the AC server. Check your network or try again later.',
+    btnRetry:        'Retry',
     // Toasts
     toastSignedIn:   u => `Signed in as ${u}.`,
     toastSessionExp: 'Session expired – please sign in again.',
@@ -98,6 +101,9 @@ const i18n = {
     errWrongCreds:   '帳號或密碼錯誤。',
     errNoNetwork:    '無法連線至伺服器，請確認網路。',
     errLoginFail:    '登入失敗，請再試一次。',
+    serverOffline:   '伺服器無法連線',
+    serverOfflineMsg:'無法連線至冷氣伺服器，請確認網路或稍後再試。',
+    btnRetry:        '重試',
     toastSignedIn:   u => `已以 ${u} 身份登入。`,
     toastSessionExp: '工作階段已過期，請重新登入。',
     toastACOn:       '冷氣已開啟。',
@@ -162,6 +168,7 @@ const dbg = (() => {
 /* ── DOM references ── */
 const el = id => document.getElementById(id);
 
+const screenOffline  = el('screen-offline');
 const screenLogin    = el('screen-login');
 const screenDevices  = el('screen-devices');
 const screenControl  = el('screen-control');
@@ -221,9 +228,15 @@ let _currentDevice = null;   // { id, name }
 ══════════════════════════════════════════════════════════════════ */
 
 function hideAllScreens() {
+  screenOffline.classList.add('hidden');
   screenLogin.classList.add('hidden');
   screenDevices.classList.add('hidden');
   screenControl.classList.add('hidden');
+}
+
+function showOfflineScreen() {
+  hideAllScreens();
+  screenOffline.classList.remove('hidden');
 }
 
 function showLoginScreen() {
@@ -327,6 +340,11 @@ function applyLang(lang) {
 
   const setText = (id, txt) => { const n = el(id); if (n) n.textContent = txt; };
   const T = i18n[lang];
+
+  // Offline
+  setText('offline-title',      T.serverOffline);
+  setText('offline-msg',        T.serverOfflineMsg);
+  setText('btn-retry-label',    T.btnRetry);
 
   // Login
   setText('brand-subtitle',     T.appSubtitle);
@@ -853,18 +871,71 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   SERVER AVAILABILITY CHECK
+══════════════════════════════════════════════════════════════════ */
+
+async function checkServer() {
+  dbg.api('server check → GET /api/ping');
+  try {
+    const response = await fetch(`${API_BASE}/api/ping`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    const ok = response.ok;
+    dbg.api('server check →', ok ? 'online' : `HTTP ${response.status}`);
+    return ok;
+  } catch (err) {
+    dbg.error('server check failed →', err.name, err.message);
+    return false;
+  }
+}
+
+const btnRetry = el('btn-retry');
+
+async function handleRetry() {
+  const label   = btnRetry.querySelector('#btn-retry-label');
+  const spinner = btnRetry.querySelector('.btn-spinner');
+  btnRetry.disabled = true;
+  label.classList.add('hidden');
+  spinner.classList.remove('hidden');
+
+  const online = await checkServer();
+
+  label.classList.remove('hidden');
+  spinner.classList.add('hidden');
+  btnRetry.disabled = false;
+
+  if (online) {
+    startup();
+  } else {
+    showToast(t('errNoNetwork'), 'error');
+  }
+}
+
+btnRetry.addEventListener('click', handleRetry);
+
+/* ══════════════════════════════════════════════════════════════════
    STARTUP
 ══════════════════════════════════════════════════════════════════ */
 
 applyLang(currentLang());
 
-const _hasSession = loadSession();
-dbg.session('startup → stored session:', _hasSession ? `user="${storedUsername()}"` : 'none');
-if (_hasSession) {
-  showDeviceScreen();
-} else {
-  showLoginScreen();
+async function startup() {
+  const online = await checkServer();
+  if (!online) {
+    showOfflineScreen();
+    return;
+  }
+
+  const hasSession = loadSession();
+  dbg.session('startup → stored session:', hasSession ? `user="${storedUsername()}"` : 'none');
+  if (hasSession) {
+    showDeviceScreen();
+  } else {
+    showLoginScreen();
+  }
 }
+
+startup();
 
 /* ══════════════════════════════════════════════════════════════════
    CONSOLE DEBUG HELPER

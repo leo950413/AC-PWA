@@ -21,6 +21,29 @@
 <body>
 
   <!-- ════════════════════════════════════════════
+       SERVER OFFLINE SCREEN
+  ════════════════════════════════════════════ -->
+  <div id="screen-offline" class="screen hidden">
+    <div class="login-wrap">
+      <div class="offline-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="32" cy="32" r="28" stroke="#ef4444" stroke-width="3" opacity="0.3"/>
+          <path d="M16 16 L48 48" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+          <path d="M12 30a28 28 0 0 1 40 0" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+          <path d="M20 38a16 16 0 0 1 24 0" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="46" r="3" fill="#475569"/>
+        </svg>
+      </div>
+      <h2 id="offline-title" class="offline-title">Server unavailable</h2>
+      <p id="offline-msg" class="offline-msg">Unable to connect to the AC server. Check your network or try again later.</p>
+      <button id="btn-retry" class="btn btn-primary btn-full" type="button">
+        <span id="btn-retry-label">Retry</span>
+        <span class="btn-spinner hidden" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
        SCREEN 1 – LOGIN
   ════════════════════════════════════════════ -->
   <div id="screen-login" class="screen hidden">

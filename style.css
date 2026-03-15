@@ -92,6 +92,33 @@ body {
   max-width: 380px;
 }
 
+/* Offline screen */
+.offline-icon {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.offline-icon svg {
+  width: 72px;
+  height: 72px;
+}
+
+.offline-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--c-text);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.offline-msg {
+  font-size: 0.85rem;
+  color: var(--c-muted);
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
 /* Brand header */
 .brand {
   text-align: center;
