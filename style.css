@@ -110,6 +110,9 @@ header,
 html {
   -webkit-tap-highlight-color: transparent;
   scroll-behavior: smooth;
+  /* Prevent iOS from auto-enlarging text in landscape */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -121,6 +124,29 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   line-height: 1.5;
+  /* Stop the page rubber-banding / pull-to-refresh inside the app shell */
+  overscroll-behavior-y: contain;
+}
+
+/* Faster, cleaner taps: kill the 300ms delay and the long-press callout
+   menu on interactive elements. */
+button,
+a,
+input,
+select,
+.device-card {
+  touch-action: manipulation;
+}
+
+.btn,
+.seg-btn,
+.stepper-btn,
+.lang-btn,
+.theme-switcher,
+.device-card,
+.btn-logout-bottom,
+.sched-cancel {
+  -webkit-touch-callout: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -286,6 +312,8 @@ header {
   align-items: center;
   justify-content: space-between;
   padding: 13px 20px;
+  /* Keep the title clear of the floating theme + language controls */
+  padding-right: calc(150px + env(safe-area-inset-right, 0px));
   max-width: 600px;
   margin: 0 auto;
 }
@@ -294,10 +322,24 @@ header {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;            /* allow the title to shrink + truncate */
   font-size: 1.0625rem;
   font-weight: 700;
   color: var(--c-text);
   letter-spacing: -0.2px;
+}
+
+/* Truncate long device / screen names instead of letting them overflow */
+.header-brand > span {
+  min-width: 0;
+  overflow: hidden;
+}
+
+#header-device-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-icon {
@@ -311,27 +353,35 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 44px;            /* comfortable touch target */
+  height: 44px;
+  flex-shrink: 0;
   background: none;
   border: none;
   color: var(--c-muted);
-  padding: 6px;
-  margin-right: 4px;
+  margin: -6px 0 -6px -8px;  /* expand hit area without shifting layout */
   border-radius: var(--r-sm);
   cursor: pointer;
   transition: color var(--tr);
 }
 .btn-back:hover { color: var(--c-accent); }
-.btn-back svg { width: 22px; height: 22px; }
+.btn-back:active { transform: scale(0.9); }
+.btn-back svg { width: 24px; height: 24px; }
 
-/* Main content area */
+/* Main content area.
+   No flex centering here — the card uses `margin: auto` (below) so it centres
+   when it fits but stays scroll-reachable from the top when it's taller than
+   the viewport (important on phones once the card grows). */
 main {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 28px 20px;
-  padding-bottom: calc(28px + env(safe-area-inset-bottom, 0));
+  padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
 }
+
+.control-card { margin: auto; }
 
 /* ── Device Dashboard ── */
 .devices-main {
@@ -603,8 +653,8 @@ main {
 /* ── Language switcher ── */
 .lang-switcher {
   position: fixed;
-  top: 14px;
-  right: 62px;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  right: calc(62px + env(safe-area-inset-right, 0px));
   z-index: 200;
   display: flex;
   gap: 2px;
@@ -640,8 +690,8 @@ main {
 /* ── Theme switcher ── */
 .theme-switcher {
   position: fixed;
-  top: 14px;
-  right: 14px;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  right: calc(14px + env(safe-area-inset-right, 0px));
   z-index: 200;
   display: flex;
   align-items: center;
@@ -694,20 +744,22 @@ main {
 
 .schedule-form-row {
   display: flex;
+  flex-wrap: wrap;          /* stack gracefully on narrow phones */
   gap: 8px;
   align-items: center;
   margin-bottom: 14px;
 }
 
 .sched-select {
-  flex: 1;
+  flex: 1 1 120px;
   min-width: 0;
   background: var(--c-bg);
   border: 1.5px solid var(--c-border);
   border-radius: var(--r-sm);
   color: var(--c-text);
   padding: 9px 10px;
-  font-size: 0.82rem;
+  /* 16px avoids the iOS focus-zoom; sized via line-height to stay compact */
+  font-size: 16px;
   font-family: inherit;
   cursor: pointer;
   appearance: none;
@@ -745,10 +797,11 @@ main {
   border: none;
   color: var(--c-text);
   padding: 9px 6px 9px 10px;
-  font-size: 0.82rem;
+  font-size: 16px;          /* avoid iOS focus-zoom */
   font-family: inherit;
   text-align: center;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .sched-input::-webkit-inner-spin-button,
