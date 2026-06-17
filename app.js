@@ -879,12 +879,11 @@ renderSettings();
 let _lastSchedules   = [];
 let _schedRefreshTmr = null;
 
-// Device ids are numeric per the API; the value comes off a data-attribute as a
-// string, so coerce it back to a number when it is one (keeps create + list
-// querying the same key).
+// The list endpoint matches schedules with `s.deviceId === req.query.id`, where
+// the query value is always a string and the comparison is strict. So the id we
+// store at create time must be a string too — coerce explicitly to be safe.
 function deviceIdForApi() {
-  const raw = _currentDevice?.id;
-  return /^\d+$/.test(String(raw)) ? Number(raw) : raw;
+  return String(_currentDevice?.id);
 }
 
 async function createSchedule(action, delayMinutes) {
