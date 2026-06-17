@@ -184,16 +184,16 @@ Read the current state of a specific AC unit. **No auth required.**
   "power": "off",
   "temperature": 24,
   "mode": "cool",
-  "fan": "auto"
+  "fan": 3
 }
 ```
 
 | Field         | Type   | Values                           |
 | ------------- | ------ | -------------------------------- |
 | `power`       | string | `"on"`, `"off"`                  |
-| `temperature` | number | Current set temperature (°C)     |
+| `temperature` | number | Current set temperature, 16–30 (°C) |
 | `mode`        | string | `"cool"`, `"heat"`, `"fan"`, `"auto"`, `"dry"` |
-| `fan`         | string | `"auto"`, `"low"`, `"medium"`, `"high"` |
+| `fan`         | number | Fan speed `1`–`6` (1 = lowest, 6 = highest) |
 
 **Failure (502):**
 
@@ -228,7 +228,8 @@ Turn a device on.
 {
   "status": 1,
   "message": "AC turned ON",
-  "hardware": { "power": "on" }
+  "power": "on",
+  "temp": 24
 }
 ```
 
@@ -250,9 +251,61 @@ Turn a device off.
 {
   "status": 1,
   "message": "AC turned OFF",
-  "hardware": { "power": "off" }
+  "power": "off",
+  "temp": 24
 }
 ```
+
+### POST /api/update
+
+Update the temperature and/or fan speed. At least one of `temp` / `fan` must be
+present; either may be sent alone. Omitted fields are left unchanged.
+
+**Auth:** `x-session-id` header
+
+**Request:**
+
+```json
+{
+  "id": "device-id-string",
+  "temp": 24,
+  "fan": 3
+}
+```
+
+| Field  | Type   | Required        | Validation                                |
+| ------ | ------ | --------------- | ----------------------------------------- |
+| `id`   | string | Yes             | Must belong to user                       |
+| `temp` | number | One of temp/fan | Integer **16–30** (°C)                    |
+| `fan`  | number | One of temp/fan | Integer **1–6** (1 = lowest, 6 = highest) |
+
+**Success (200):**
+
+```json
+{
+  "status": 1,
+  "message": "AC settings updated",
+  "power": "on",
+  "temp": 24,
+  "fan": 3
+}
+```
+
+The frontend uses the echoed `temp` / `fan` to re-sync the on-screen controls.
+
+> **Note:** there is no endpoint to set `mode`. `mode` is returned by
+> `GET /api/status` (read-only) and shown in the status grid, but cannot be
+> changed from the app.
+
+**Failure:**
+
+| Status | Body |
+| ------ | ---- |
+| 400    | `{ "status": 0, "message": "temp must be an integer between 16 and 30" }` |
+| 400    | `{ "status": 0, "message": "fan must be an integer between 1 and 6" }` |
+| 400    | `{ "status": 0, "message": "at least one of temp or fan is required" }` |
+| 401    | `{ "status": 0, "message": "Unauthorized – valid session required" }` |
+| 502    | `{ "error": "Unable to reach AC hardware", "details": "..." }` |
 
 ### Shared Failure Responses
 
@@ -438,12 +491,17 @@ GET /api/status?id=<deviceId>
 POST /api/on
   Header: x-session-id, Content-Type: application/json
   Body: { id }
-  → 200 { status, message, hardware }
+  → 200 { status, message, power, temp }
 
 POST /api/off
   Header: x-session-id, Content-Type: application/json
   Body: { id }
-  → 200 { status, message, hardware }
+  → 200 { status, message, power, temp }
+
+POST /api/update
+  Header: x-session-id, Content-Type: application/json
+  Body: { id, temp?, fan? }                  // temp 16–30, fan 1–6 (≥1 required)
+  → 200 { status, message, power, temp, fan }
 
 POST /api/schedule
   Header: x-session-id, Content-Type: application/json

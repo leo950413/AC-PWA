@@ -33,6 +33,10 @@ const i18n = {
     btnPowerOn:      'Power On',
     btnPowerOff:     'Power Off',
     btnRefresh:      'Refresh Status',
+    adjustTemp:      'Temperature',
+    adjustFan:       'Fan Speed',
+    toastSetSaved:   'AC settings updated.',
+    toastSetFail:    'Failed to update settings.',
     statLabelPower:  'Power',
     statLabelMode:   'Mode',
     statLabelTemp:   'Temp',
@@ -88,6 +92,10 @@ const i18n = {
     btnPowerOn:      '開機',
     btnPowerOff:     '關機',
     btnRefresh:      '更新狀態',
+    adjustTemp:      '溫度',
+    adjustFan:       '風速',
+    toastSetSaved:   '冷氣設定已更新。',
+    toastSetFail:    '設定更新失敗。',
     statLabelPower:  '電源',
     statLabelMode:   '模式',
     statLabelTemp:   '溫度',
@@ -271,6 +279,7 @@ function showControlScreen(device) {
   const deviceNameEl = el('header-device-name');
   if (deviceNameEl) deviceNameEl.textContent = device.name;
   setACState('idle');
+  setAdjustEnabled(false);
   // Reset status grid
   el('ac-status-grid')?.classList.add('hidden');
   ['stat-power', 'stat-mode', 'stat-temp', 'stat-fan'].forEach(id => {
@@ -403,6 +412,10 @@ function applyLang(lang) {
   setText('stat-label-mode',    T.statLabelMode);
   setText('stat-label-temp',    T.statLabelTemp);
   setText('stat-label-fan',     T.statLabelFan);
+
+  // Adjust controls
+  setText('adjust-temp-label',  T.adjustTemp);
+  setText('adjust-fan-label',   T.adjustFan);
 
   // Schedule
   setText('schedule-title',     T.schedTitle);
@@ -565,10 +578,16 @@ function renderACStatus(data) {
   }
   if (statMode && data.mode != null)        statMode.textContent = cap(data.mode);
   if (statTemp && data.temperature != null) statTemp.textContent = `${Number(data.temperature).toFixed(1)}°C`;
-  if (statFan  && data.fan != null)         statFan.textContent  = cap(data.fan);
+  if (statFan  && data.fan != null)         statFan.textContent  = typeof data.fan === 'number' ? String(data.fan) : cap(data.fan);
 
   if (grid) grid.classList.remove('hidden');
-  if (data.power !== undefined) setACState(data.power === 'on' || data.power === true ? 'on' : 'off');
+
+  // Sync the adjust controls; enable them now that we have a live status.
+  syncSettingsFromStatus(data);
+  setAdjustEnabled(true);
+  if (data.power !== undefined) {
+    setACState(data.power === 'on' || data.power === true ? 'on' : 'off');
+  }
 
   dbg.session('AC status rendered →', data);
 }
@@ -589,7 +608,7 @@ async function fetchStatus() {
       showToast(t('toastSessionExp'), 'error');
       return;
     }
-    if (response.status === 502) { setACState('error'); return; }
+    if (response.status === 502) { setACState('error'); setAdjustEnabled(false); return; }
     if (!response.ok) return;
 
     const data = await response.json();
@@ -651,6 +670,137 @@ async function acCommand(command) {
     setLoading(false);
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   AC SETTINGS  (temperature / fan / mode)
+   POST /api/update   Body: { id, temp?, fan? }   (temp 16–30, fan 1–6)
+══════════════════════════════════════════════════════════════════ */
+const TEMP_MIN = 16, TEMP_MAX = 30;
+const FAN_MIN  = 1,  FAN_MAX  = 6;
+
+const adjustSection = el('adjust-section');
+const tempRange     = el('temp-range');
+const tempValueEl   = el('temp-value');
+const tempUpBtn     = el('temp-up');
+const tempDownBtn   = el('temp-down');
+const fanSeg        = el('fan-seg');
+const fanValueEl    = el('fan-value');
+
+// Locally-held current settings (kept in sync with /api/status & /api/update).
+let _settings = { temp: 24, fan: 3 };
+let _setTimer = null;
+
+const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+
+function paintTempFill() {
+  if (!tempRange) return;
+  const pct = ((_settings.temp - TEMP_MIN) / (TEMP_MAX - TEMP_MIN)) * 100;
+  tempRange.style.setProperty('--fill', pct + '%');
+}
+
+function renderSettings() {
+  if (!adjustSection) return;
+  // Temperature
+  tempValueEl.textContent = _settings.temp;
+  tempRange.value         = _settings.temp;
+  tempDownBtn.disabled    = _settings.temp <= TEMP_MIN;
+  tempUpBtn.disabled      = _settings.temp >= TEMP_MAX;
+  paintTempFill();
+  // Fan
+  fanValueEl.textContent = _settings.fan;
+  fanSeg.querySelectorAll('.seg-btn').forEach(b =>
+    b.classList.toggle('active', Number(b.dataset.fan) === _settings.fan));
+}
+
+// Controls are interactive only once we have a live status.
+function setAdjustEnabled(on) {
+  if (adjustSection) adjustSection.classList.toggle('disabled', !on);
+}
+
+// Merge a payload into local settings. Accepts both /api/status (`temperature`)
+// and /api/update (`temp`) field names.
+function syncSettingsFromStatus(data) {
+  if (!data) return;
+  const tempRaw = data.temp != null ? data.temp : data.temperature;
+  if (tempRaw != null) {
+    const n = Number(tempRaw);
+    if (Number.isFinite(n)) _settings.temp = clamp(Math.round(n), TEMP_MIN, TEMP_MAX);
+  }
+  if (data.fan != null) {
+    const n = Number(data.fan);
+    if (Number.isFinite(n)) _settings.fan = clamp(Math.round(n), FAN_MIN, FAN_MAX);
+  }
+  renderSettings();
+}
+
+async function sendSettings(patch) {
+  if (!_currentDevice) return;
+  const body = { id: _currentDevice.id, ...patch };
+  dbg.api('update →', 'POST /api/update', body);
+  try {
+    const response = await fetch(`${API_BASE}/api/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+      body: JSON.stringify(body),
+    });
+    if (response.status === 401) {
+      clearSession(); showLoginScreen();
+      showToast(t('toastSessionExp'), 'error');
+      return;
+    }
+    if (response.status === 502) { showToast(t('toastHwError'), 'error'); return; }
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.status === 0) {
+      // 400 validation errors carry { status:0, message }
+      showToast(data.message || t('toastSetFail'), 'error');
+      return;
+    }
+    if (data.status === 1) {
+      showToast(t('toastSetSaved'), 'success', 1800);
+      syncSettingsFromStatus(data);   // echoes power, temp, fan
+    }
+  } catch (err) {
+    dbg.error('sendSettings threw →', err.name, err.message);
+    showToast(err instanceof TypeError ? t('toastCmdNetwork') : t('toastSetFail'), 'error');
+  }
+}
+
+// Debounced commit for the continuous temperature slider/stepper.
+function commitTemp() {
+  clearTimeout(_setTimer);
+  _setTimer = setTimeout(() => sendSettings({ temp: _settings.temp }), 500);
+}
+
+function changeTemp(next) {
+  _settings.temp = clamp(next, TEMP_MIN, TEMP_MAX);
+  renderSettings();
+  commitTemp();
+}
+
+if (tempRange) {
+  tempRange.addEventListener('input', () => {
+    _settings.temp = clamp(Number(tempRange.value), TEMP_MIN, TEMP_MAX);
+    tempValueEl.textContent = _settings.temp;
+    tempDownBtn.disabled    = _settings.temp <= TEMP_MIN;
+    tempUpBtn.disabled      = _settings.temp >= TEMP_MAX;
+    paintTempFill();
+  });
+  tempRange.addEventListener('change', commitTemp);
+}
+if (tempUpBtn)   tempUpBtn.addEventListener('click',   () => changeTemp(_settings.temp + 1));
+if (tempDownBtn) tempDownBtn.addEventListener('click', () => changeTemp(_settings.temp - 1));
+
+if (fanSeg) fanSeg.addEventListener('click', e => {
+  const btn = e.target.closest('.seg-btn');
+  if (!btn) return;
+  _settings.fan = clamp(Number(btn.dataset.fan), FAN_MIN, FAN_MAX);
+  renderSettings();
+  sendSettings({ fan: _settings.fan });
+});
+
+// Paint the initial (default) state.
+renderSettings();
 
 /* ══════════════════════════════════════════════════════════════════
    SCHEDULING

@@ -905,6 +905,193 @@ main {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   ADJUST CONTROLS  (temperature / fan / mode)
+══════════════════════════════════════════════════════════════════ */
+.adjust-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.adjust-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adjust-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.adjust-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--c-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.adjust-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.adjust-unit {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin-left: 1px;
+}
+
+/* ── Temperature stepper + slider ── */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepper-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-bg);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-sm);
+  color: var(--c-text);
+  cursor: pointer;
+  transition: border-color var(--tr), color var(--tr), background var(--tr), transform var(--tr);
+}
+
+.stepper-btn svg { width: 18px; height: 18px; }
+
+.stepper-btn:hover:not(:disabled) {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+.stepper-btn:active:not(:disabled) { transform: scale(0.9); }
+
+.stepper-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.temp-range {
+  flex: 1;
+  min-width: 0;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Track — filled portion driven by --fill (set in JS) */
+.temp-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(
+    to right,
+    var(--c-accent) 0%,
+    var(--c-accent) var(--fill, 50%),
+    var(--c-border) var(--fill, 50%),
+    var(--c-border) 100%
+  );
+}
+
+.temp-range::-moz-range-track {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--c-border);
+}
+
+.temp-range::-moz-range-progress {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--c-accent);
+}
+
+.temp-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: 3px solid var(--c-surface);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  transition: transform var(--tr);
+}
+
+.temp-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: 3px solid var(--c-surface);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+.temp-range:active::-webkit-slider-thumb { transform: scale(1.12); }
+
+.temp-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.3);
+}
+
+/* ── Segmented control (fan + mode) ── */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.seg-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 6px 2px;
+  background: var(--c-bg);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-sm);
+  color: var(--c-muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--tr), color var(--tr), background var(--tr), transform var(--tr);
+}
+
+.seg-btn:hover:not(.active) {
+  border-color: var(--c-accent);
+  color: var(--c-text);
+}
+
+.seg-btn:active { transform: scale(0.93); }
+
+.seg-btn.active {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-on-accent);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+}
+
+/* Disabled (AC off) — dim the whole adjust panel */
+.adjust-section.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════
    BUTTONS
 ══════════════════════════════════════════════════════════════════ */
 .btn {

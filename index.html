@@ -255,6 +255,52 @@
           </button>
         </div>
 
+        <!-- ── Adjust: temperature / fan / mode ── -->
+        <div id="adjust-section" class="adjust-section">
+
+          <!-- Temperature -->
+          <div class="adjust-block">
+            <div class="adjust-head">
+              <span id="adjust-temp-label" class="adjust-label">Temperature</span>
+              <span class="adjust-value">
+                <span id="temp-value">24</span><span class="adjust-unit">°C</span>
+              </span>
+            </div>
+            <div class="stepper">
+              <button id="temp-down" class="stepper-btn" type="button" aria-label="Decrease temperature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                     stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <input id="temp-range" class="temp-range" type="range"
+                     min="16" max="30" step="1" value="24"
+                     aria-label="Temperature in degrees Celsius" />
+              <button id="temp-up" class="stepper-btn" type="button" aria-label="Increase temperature">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                     stroke-linecap="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Fan speed -->
+          <div class="adjust-block">
+            <div class="adjust-head">
+              <span id="adjust-fan-label" class="adjust-label">Fan Speed</span>
+              <span class="adjust-value"><span id="fan-value">3</span></span>
+            </div>
+            <div id="fan-seg" class="segmented" role="group" aria-label="Fan speed">
+              <button class="seg-btn" type="button" data-fan="1">1</button>
+              <button class="seg-btn" type="button" data-fan="2">2</button>
+              <button class="seg-btn" type="button" data-fan="3">3</button>
+              <button class="seg-btn" type="button" data-fan="4">4</button>
+              <button class="seg-btn" type="button" data-fan="5">5</button>
+              <button class="seg-btn" type="button" data-fan="6">6</button>
+            </div>
+          </div>
+
+        </div>
+
         <!-- Refresh -->
         <div class="btn-row-center">
           <button id="btn-refresh" class="btn btn-ghost btn-refresh" aria-label="Refresh AC status">
