@@ -13,11 +13,9 @@ The PWA expects a REST API backend with the following capabilities:
 | Health Check   | `GET /api/ping`                                | No            |
 | Authentication | `POST /api/login`                              | No            |
 | Device List    | `GET /api/devices`                             | Yes           |
-| AC Status      | `GET /api/status?id=<deviceId>`                | No\*          |
-| AC Control     | `POST /api/on`, `POST /api/off`                | Yes           |
+| AC Status      | `GET /api/status?id=<deviceId>`                | Yes           |
+| AC Control     | `POST /api/on`, `POST /api/off`, `POST /api/update` | Yes      |
 | Scheduling     | `POST/GET /api/schedule`, `DELETE /api/schedule/:id` | Yes     |
-
-\* Status currently works without auth, but the frontend sends the session header if available.
 
 ---
 
@@ -167,7 +165,9 @@ Device {
 
 ### GET /api/status
 
-Read the current state of a specific AC unit. **No auth required.**
+Read the current state of a specific AC unit.
+
+**Auth:** `x-session-id` header (required — previously public).
 
 **Query parameters:**
 
@@ -182,20 +182,28 @@ Read the current state of a specific AC unit. **No auth required.**
 ```json
 {
   "power": "off",
-  "temperature": 24,
-  "mode": "cool",
+  "temp": 24,
   "fan": 3
 }
 ```
 
-| Field         | Type   | Values                           |
-| ------------- | ------ | -------------------------------- |
-| `power`       | string | `"on"`, `"off"`                  |
-| `temperature` | number | Current set temperature, 16–30 (°C) |
-| `mode`        | string | `"cool"`, `"heat"`, `"fan"`, `"auto"`, `"dry"` |
-| `fan`         | number | Fan speed `1`–`6` (1 = lowest, 6 = highest) |
+| Field   | Type   | Values                                      |
+| ------- | ------ | ------------------------------------------- |
+| `power` | string | `"on"`, `"off"`                             |
+| `temp`  | number | Current set temperature, 16–30 (°C)         |
+| `fan`   | number | Fan speed `1`–`6` (1 = lowest, 6 = highest) |
 
-**Failure (502):**
+The frontend uses these fields to drive the status grid **and** to initialise
+the temperature / fan controls (the "adjust" panel).
+
+**Failure:**
+
+| Status | Body |
+| ------ | ---- |
+| 401    | `{ "status": 0, "message": "Unauthorized – valid session required" }` |
+| 502    | `{ "error": "Unable to reach AC hardware", "details": "..." }` |
+
+**Failure (502) body:**
 
 ```json
 {
@@ -485,8 +493,8 @@ GET /api/devices
   → 200 { status, devices: [{ id, name, power }] }
 
 GET /api/status?id=<deviceId>
-  Header: x-session-id (optional)
-  → 200 { power, temperature, mode, fan }
+  Header: x-session-id (required)
+  → 200 { power, temp, fan }
 
 POST /api/on
   Header: x-session-id, Content-Type: application/json

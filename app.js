@@ -40,7 +40,6 @@ const i18n = {
     toastSetFail:    'Failed to update settings.',
     toastNoChanges:  'No changes to update.',
     statLabelPower:  'Power',
-    statLabelMode:   'Mode',
     statLabelTemp:   'Temp',
     statLabelFan:    'Fan',
     statValOn:       'ON',
@@ -101,7 +100,6 @@ const i18n = {
     toastSetFail:    '設定更新失敗。',
     toastNoChanges:  '沒有變更可更新。',
     statLabelPower:  '電源',
-    statLabelMode:   '模式',
     statLabelTemp:   '溫度',
     statLabelFan:    '風扇',
     statValOn:       '開',
@@ -286,7 +284,7 @@ function showControlScreen(device) {
   setAdjustEnabled(false);
   // Reset status grid
   el('ac-status-grid')?.classList.add('hidden');
-  ['stat-power', 'stat-mode', 'stat-temp', 'stat-fan'].forEach(id => {
+  ['stat-power', 'stat-temp', 'stat-fan'].forEach(id => {
     const n = el(id);
     if (n) { n.textContent = '—'; delete n.dataset.state; }
   });
@@ -413,7 +411,6 @@ function applyLang(lang) {
   setText('btn-off-label',      T.btnPowerOff);
   setText('btn-refresh-label',  T.btnRefresh);
   setText('stat-label-power',   T.statLabelPower);
-  setText('stat-label-mode',    T.statLabelMode);
   setText('stat-label-temp',    T.statLabelTemp);
   setText('stat-label-fan',     T.statLabelFan);
 
@@ -562,7 +559,8 @@ deviceListEl.addEventListener('click', e => {
 
 /* ══════════════════════════════════════════════════════════════════
    AC STATUS
-   GET /api/status?id=<deviceId>
+   GET /api/status?id=<deviceId>   (requires x-session-id)
+   Returns: { power, temp, fan }
 ══════════════════════════════════════════════════════════════════ */
 
 const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '—';
@@ -571,7 +569,6 @@ function renderACStatus(data) {
   if (!data || typeof data !== 'object') return;
 
   const statPower = el('stat-power');
-  const statMode  = el('stat-mode');
   const statTemp  = el('stat-temp');
   const statFan   = el('stat-fan');
   const grid      = el('ac-status-grid');
@@ -581,9 +578,11 @@ function renderACStatus(data) {
     statPower.textContent   = on ? t('statValOn') : t('statValOff');
     statPower.dataset.state = on ? 'on' : 'off';
   }
-  if (statMode && data.mode != null)        statMode.textContent = cap(data.mode);
-  if (statTemp && data.temperature != null) statTemp.textContent = `${Number(data.temperature).toFixed(1)}°C`;
-  if (statFan  && data.fan != null)         statFan.textContent  = typeof data.fan === 'number' ? String(data.fan) : cap(data.fan);
+
+  // `temp` is the live field name; accept legacy `temperature` as a fallback.
+  const tempVal = data.temp != null ? data.temp : data.temperature;
+  if (statTemp && tempVal != null) statTemp.textContent = `${Number(tempVal).toFixed(1)}°C`;
+  if (statFan  && data.fan  != null) statFan.textContent = typeof data.fan === 'number' ? String(data.fan) : cap(data.fan);
 
   if (grid) grid.classList.remove('hidden');
 
@@ -677,7 +676,7 @@ async function acCommand(command) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   AC SETTINGS  (temperature / fan / mode)
+   AC SETTINGS  (temperature / fan)
    POST /api/update   Body: { id, temp?, fan? }   (temp 16–30, fan 1–6)
 ══════════════════════════════════════════════════════════════════ */
 const TEMP_MIN = 16, TEMP_MAX = 30;
