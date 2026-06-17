@@ -3,7 +3,7 @@
    Strategy: Cache-first for static assets, network-only for API.
 ───────────────────────────────────────────────────────────────── */
 
-const CACHE_NAME  = 'ac-control-v7';
+const CACHE_NAME  = 'ac-control-v8';
 const API_ORIGIN  = 'https://iot-ac.c024.click';
 
 const STATIC_ASSETS = [

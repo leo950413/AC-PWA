@@ -910,15 +910,25 @@ async function createSchedule(action, delayMinutes) {
 
 async function fetchSchedules() {
   if (!_currentDevice) return;
-  dbg.api('fetching schedules → GET /api/schedule?id=' + _currentDevice.id);
+  const url = `${API_BASE}/api/schedule?id=${encodeURIComponent(_currentDevice.id)}`;
+  dbg.api('fetching schedules → GET ' + url);
   try {
-    const response = await fetch(`${API_BASE}/api/schedule?id=${_currentDevice.id}`, {
-      headers: sessionHeaders(),
-    });
-    if (response.status === 401) return;
-    if (!response.ok) return;
+    const response = await fetch(url, { headers: sessionHeaders() });
+    if (response.status === 401) {
+      clearSession(); showLoginScreen();
+      showToast(t('toastSessionExp'), 'error');
+      return;
+    }
+    if (!response.ok) { dbg.error('schedules → HTTP', response.status); return; }
+
     const data = await response.json();
-    if (data.status === 1) renderSchedules(data.schedules || []);
+    // Tolerate several envelope shapes: { schedules:[…] } | { data:[…] } | [ … ]
+    const list = Array.isArray(data)            ? data
+               : Array.isArray(data.schedules)  ? data.schedules
+               : Array.isArray(data.data)       ? data.data
+               : [];
+    dbg.session('schedules fetched →', list.length, list);
+    renderSchedules(list);
   } catch (err) {
     dbg.error('fetchSchedules threw →', err.name, err.message);
   }
@@ -927,7 +937,7 @@ async function fetchSchedules() {
 async function cancelSchedule(scheduleId) {
   dbg.api('cancelSchedule →', scheduleId);
   try {
-    const response = await fetch(`${API_BASE}/api/schedule/${scheduleId}`, {
+    const response = await fetch(`${API_BASE}/api/schedule/${encodeURIComponent(scheduleId)}`, {
       method: 'DELETE',
       headers: sessionHeaders(),
     });
@@ -949,20 +959,38 @@ async function cancelSchedule(scheduleId) {
   }
 }
 
+// Resolve a schedule's fire time (ms epoch) from the various shapes a backend
+// might send: ISO string, epoch ms, epoch seconds, or a remaining-minutes field.
+function scheduleFireTime(s) {
+  const raw = s.executeAt ?? s.execute_at ?? s.executeAtUtc ?? s.fireAt ?? s.time;
+  if (raw == null) {
+    const mins = Number(s.remainingMinutes ?? s.delayMinutes ?? s.minutes);
+    return Number.isFinite(mins) ? Date.now() + mins * 60000 : NaN;
+  }
+  if (typeof raw === 'number') return raw < 1e12 ? raw * 1000 : raw; // s vs ms
+  return Date.parse(raw); // NaN if unparseable
+}
+
 function renderSchedules(schedules) {
-  _lastSchedules = schedules;
+  _lastSchedules = Array.isArray(schedules) ? schedules : [];
   const list = el('schedule-list');
   if (!list) return;
 
-  if (!schedules.length) {
+  // Pair each schedule with its parsed time and show soonest-first.
+  const items = _lastSchedules
+    .filter(s => s && s.id != null)
+    .map(s => ({ s, at: scheduleFireTime(s) }))
+    .sort((a, b) => (Number.isFinite(a.at) ? a.at : Infinity) -
+                    (Number.isFinite(b.at) ? b.at : Infinity));
+
+  if (!items.length) {
     list.innerHTML = `<li class="sched-empty">${t('schedEmpty')}</li>`;
     return;
   }
 
-  list.innerHTML = schedules.map(s => {
-    const isOn      = s.action === 'on';
-    const execAt    = new Date(s.executeAt);
-    const minsLeft  = Math.max(0, Math.round((execAt - Date.now()) / 60000));
+  list.innerHTML = items.map(({ s, at }) => {
+    const isOn      = s.action === 'on' || s.action === true;
+    const minsLeft  = Number.isFinite(at) ? Math.max(0, Math.round((at - Date.now()) / 60000)) : 0;
     const countdown = minsLeft > 0 ? t('schedIn', minsLeft) : t('schedPast');
     const label     = isOn ? t('schedOptOn') : t('schedOptOff');
     const cls       = isOn ? 'sched-action-on' : 'sched-action-off';
