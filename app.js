@@ -35,8 +35,10 @@ const i18n = {
     btnRefresh:      'Refresh Status',
     adjustTemp:      'Temperature',
     adjustFan:       'Fan Speed',
+    btnUpdate:       'Update',
     toastSetSaved:   'AC settings updated.',
     toastSetFail:    'Failed to update settings.',
+    toastNoChanges:  'No changes to update.',
     statLabelPower:  'Power',
     statLabelMode:   'Mode',
     statLabelTemp:   'Temp',
@@ -94,8 +96,10 @@ const i18n = {
     btnRefresh:      '更新狀態',
     adjustTemp:      '溫度',
     adjustFan:       '風速',
+    btnUpdate:       '更新',
     toastSetSaved:   '冷氣設定已更新。',
     toastSetFail:    '設定更新失敗。',
+    toastNoChanges:  '沒有變更可更新。',
     statLabelPower:  '電源',
     statLabelMode:   '模式',
     statLabelTemp:   '溫度',
@@ -416,6 +420,7 @@ function applyLang(lang) {
   // Adjust controls
   setText('adjust-temp-label',  T.adjustTemp);
   setText('adjust-fan-label',   T.adjustFan);
+  setText('btn-update-label',   T.btnUpdate);
 
   // Schedule
   setText('schedule-title',     T.schedTitle);
@@ -685,17 +690,28 @@ const tempUpBtn     = el('temp-up');
 const tempDownBtn   = el('temp-down');
 const fanSeg        = el('fan-seg');
 const fanValueEl    = el('fan-value');
+const btnUpdate     = el('btn-update');
 
-// Locally-held current settings (kept in sync with /api/status & /api/update).
+// `_settings` is what the controls show (staged, not yet sent).
+// `_applied`  is the last value confirmed by the server — the baseline used to
+//             tell whether there are pending changes to update.
 let _settings = { temp: 24, fan: 3 };
-let _setTimer = null;
+let _applied  = { temp: 24, fan: 3 };
+let _updating = false;
 
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+
+const isDirty = () => _settings.temp !== _applied.temp || _settings.fan !== _applied.fan;
 
 function paintTempFill() {
   if (!tempRange) return;
   const pct = ((_settings.temp - TEMP_MIN) / (TEMP_MAX - TEMP_MIN)) * 100;
   tempRange.style.setProperty('--fill', pct + '%');
+}
+
+// Enable the Update button only when there are unsent changes.
+function refreshUpdateBtn() {
+  if (btnUpdate) btnUpdate.disabled = _updating || !isDirty();
 }
 
 function renderSettings() {
@@ -710,6 +726,7 @@ function renderSettings() {
   fanValueEl.textContent = _settings.fan;
   fanSeg.querySelectorAll('.seg-btn').forEach(b =>
     b.classList.toggle('active', Number(b.dataset.fan) === _settings.fan));
+  refreshUpdateBtn();
 }
 
 // Controls are interactive only once we have a live status.
@@ -717,8 +734,8 @@ function setAdjustEnabled(on) {
   if (adjustSection) adjustSection.classList.toggle('disabled', !on);
 }
 
-// Merge a payload into local settings. Accepts both /api/status (`temperature`)
-// and /api/update (`temp`) field names.
+// Merge a payload into staged + applied settings (no pending changes after).
+// Accepts both /api/status (`temperature`) and /api/update (`temp`) names.
 function syncSettingsFromStatus(data) {
   if (!data) return;
   const tempRaw = data.temp != null ? data.temp : data.temperature;
@@ -730,13 +747,20 @@ function syncSettingsFromStatus(data) {
     const n = Number(data.fan);
     if (Number.isFinite(n)) _settings.fan = clamp(Math.round(n), FAN_MIN, FAN_MAX);
   }
+  _applied = { temp: _settings.temp, fan: _settings.fan };
   renderSettings();
 }
 
-async function sendSettings(patch) {
-  if (!_currentDevice) return;
-  const body = { id: _currentDevice.id, ...patch };
+// Send the staged temp + fan together. Triggered by the Update button only.
+async function applySettings() {
+  if (!_currentDevice || _updating) return;
+  if (!isDirty()) { showToast(t('toastNoChanges'), 'info', 1500); return; }
+
+  const body = { id: _currentDevice.id, temp: _settings.temp, fan: _settings.fan };
   dbg.api('update →', 'POST /api/update', body);
+  _updating = true;
+  refreshUpdateBtn();
+  setLoading(true);
   try {
     const response = await fetch(`${API_BASE}/api/update`, {
       method: 'POST',
@@ -758,24 +782,24 @@ async function sendSettings(patch) {
     }
     if (data.status === 1) {
       showToast(t('toastSetSaved'), 'success', 1800);
-      syncSettingsFromStatus(data);   // echoes power, temp, fan
+      // Echoes power, temp, fan → becomes the new applied baseline.
+      _applied = { temp: _settings.temp, fan: _settings.fan };
+      syncSettingsFromStatus(data);
     }
   } catch (err) {
-    dbg.error('sendSettings threw →', err.name, err.message);
+    dbg.error('applySettings threw →', err.name, err.message);
     showToast(err instanceof TypeError ? t('toastCmdNetwork') : t('toastSetFail'), 'error');
+  } finally {
+    _updating = false;
+    setLoading(false);
+    refreshUpdateBtn();
   }
 }
 
-// Debounced commit for the continuous temperature slider/stepper.
-function commitTemp() {
-  clearTimeout(_setTimer);
-  _setTimer = setTimeout(() => sendSettings({ temp: _settings.temp }), 500);
-}
-
+// ── Local (staging) handlers — these never hit the network ──
 function changeTemp(next) {
   _settings.temp = clamp(next, TEMP_MIN, TEMP_MAX);
   renderSettings();
-  commitTemp();
 }
 
 if (tempRange) {
@@ -785,8 +809,8 @@ if (tempRange) {
     tempDownBtn.disabled    = _settings.temp <= TEMP_MIN;
     tempUpBtn.disabled      = _settings.temp >= TEMP_MAX;
     paintTempFill();
+    refreshUpdateBtn();
   });
-  tempRange.addEventListener('change', commitTemp);
 }
 if (tempUpBtn)   tempUpBtn.addEventListener('click',   () => changeTemp(_settings.temp + 1));
 if (tempDownBtn) tempDownBtn.addEventListener('click', () => changeTemp(_settings.temp - 1));
@@ -796,8 +820,9 @@ if (fanSeg) fanSeg.addEventListener('click', e => {
   if (!btn) return;
   _settings.fan = clamp(Number(btn.dataset.fan), FAN_MIN, FAN_MAX);
   renderSettings();
-  sendSettings({ fan: _settings.fan });
 });
+
+if (btnUpdate) btnUpdate.addEventListener('click', applySettings);
 
 // Paint the initial (default) state.
 renderSettings();
