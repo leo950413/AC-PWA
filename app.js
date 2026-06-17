@@ -300,27 +300,25 @@ function setACState(state) {
       airflow && airflow.classList.remove('hidden');
       btnOn.classList.add('active');
       setStatus('on', t('statusRunning'));
-      setThemeColor('#052e16');
       break;
     case 'off':
       ring && ring.setAttribute('stroke', '#ef4444');
       airflow && airflow.classList.add('hidden');
       btnOff.classList.add('active');
       setStatus('off', t('statusStandby'));
-      setThemeColor('#0f172a');
       break;
     case 'error':
       ring && ring.setAttribute('stroke', '#ef4444');
       airflow && airflow.classList.add('hidden');
       setStatus('error', t('statusError'));
-      setThemeColor('#0f172a');
       break;
     default:
       ring && ring.setAttribute('stroke', '#334155');
       airflow && airflow.classList.add('hidden');
       setStatus('idle', t('statusReady'));
-      setThemeColor('#0f172a');
   }
+
+  refreshThemeColor();
 }
 
 function setStatus(type, label) {
@@ -331,6 +329,40 @@ function setStatus(type, label) {
 function setThemeColor(color) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   THEME (dark / light)
+══════════════════════════════════════════════════════════════════ */
+const THEME_KEY = 'ac_theme';
+
+// Browser-chrome (theme-color) values per theme & AC state.
+const THEME_BAR = {
+  dark:  { base: '#0f172a', on: '#052e16' },
+  light: { base: '#eef2f7', on: '#dcfce7' },
+};
+
+function currentTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light'
+    ? 'light' : 'dark';
+}
+
+// Re-apply the address-bar colour for the current theme + AC power state.
+function refreshThemeColor() {
+  const bar = THEME_BAR[currentTheme()];
+  setThemeColor(_acState === 'on' ? bar.on : bar.base);
+}
+
+function applyTheme(theme) {
+  const next = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(THEME_KEY, next);
+  refreshThemeColor();
+  dbg.info('theme applied →', next);
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -832,6 +864,17 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => applyLang(btn.dataset.lang));
 });
 
+// Theme toggle
+const btnTheme = el('theme-switcher');
+if (btnTheme) btnTheme.addEventListener('click', toggleTheme);
+
+// Follow OS theme changes only while the user hasn't picked one explicitly
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+    if (!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'light' : 'dark');
+  });
+}
+
 // Schedule form
 const btnSchedule = el('btn-schedule');
 const schedAction = el('sched-action');
@@ -921,6 +964,7 @@ btnRetry.addEventListener('click', handleRetry);
 ══════════════════════════════════════════════════════════════════ */
 
 applyLang(currentLang());
+refreshThemeColor();
 
 async function startup() {
   const online = await checkServer();

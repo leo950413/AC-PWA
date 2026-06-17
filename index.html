@@ -16,6 +16,22 @@
   <link rel="apple-touch-icon" href="icons/icon.svg" />
 
   <title>AC Control</title>
+
+  <!-- Apply saved theme before first paint to avoid a flash -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('ac_theme');
+        var theme = saved === 'light' || saved === 'dark'
+          ? saved
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -317,6 +333,26 @@
   <div id="loading-overlay" class="hidden" role="progressbar" aria-label="Sending command…">
     <div class="spinner-ring"></div>
   </div>
+
+  <button id="theme-switcher" class="theme-switcher" type="button"
+          aria-label="Toggle dark / light theme" title="Toggle theme">
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.5"/>
+      <line x1="12" y1="1.5" x2="12" y2="4"/>
+      <line x1="12" y1="20" x2="12" y2="22.5"/>
+      <line x1="1.5" y1="12" x2="4" y2="12"/>
+      <line x1="20" y1="12" x2="22.5" y2="12"/>
+      <line x1="4.2" y1="4.2" x2="6" y2="6"/>
+      <line x1="18" y1="18" x2="19.8" y2="19.8"/>
+      <line x1="4.2" y1="19.8" x2="6" y2="18"/>
+      <line x1="18" y1="6" x2="19.8" y2="4.2"/>
+    </svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+    </svg>
+  </button>
 
   <div id="lang-switcher" class="lang-switcher" role="group" aria-label="Language">
     <button class="lang-btn" data-lang="zh">中文</button>
