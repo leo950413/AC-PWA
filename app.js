@@ -879,6 +879,14 @@ renderSettings();
 let _lastSchedules   = [];
 let _schedRefreshTmr = null;
 
+// Device ids are numeric per the API; the value comes off a data-attribute as a
+// string, so coerce it back to a number when it is one (keeps create + list
+// querying the same key).
+function deviceIdForApi() {
+  const raw = _currentDevice?.id;
+  return /^\d+$/.test(String(raw)) ? Number(raw) : raw;
+}
+
 async function createSchedule(action, delayMinutes) {
   if (!_currentDevice) return false;
   dbg.api('createSchedule →', action, delayMinutes, 'min | device:', _currentDevice.id);
@@ -886,7 +894,7 @@ async function createSchedule(action, delayMinutes) {
     const response = await fetch(`${API_BASE}/api/schedule`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
-      body: JSON.stringify({ id: _currentDevice.id, action, delayMinutes }),
+      body: JSON.stringify({ id: deviceIdForApi(), action, delayMinutes }),
     });
     if (response.status === 401) {
       clearSession(); showLoginScreen();
