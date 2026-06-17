@@ -510,6 +510,7 @@ async function fetchDevices() {
     if (data.status === 1 && Array.isArray(data.devices)) {
       _lastDevices = data.devices;
       renderDeviceCards(data.devices);
+      refreshDeviceStatuses(data.devices);   // fire-and-forget live refresh
     } else {
       deviceListEl.innerHTML = `<p class="devices-empty">${t('noDevices')}</p>`;
     }
@@ -543,6 +544,43 @@ function renderDeviceCards(devices) {
       <span class="device-status ${statusCls}">${statusTxt}</span>
     </button>`;
   }).join('');
+}
+
+// Reflect a device's live power state onto its rendered card.
+function updateDeviceCardStatus(id, isOn) {
+  const cards = deviceListEl.querySelectorAll('.device-card');
+  for (const card of cards) {
+    if (card.dataset.deviceId !== String(id)) continue;
+    const badge = card.querySelector('.device-status');
+    if (badge) {
+      badge.classList.toggle('device-status-on', isOn);
+      badge.classList.toggle('device-status-off', !isOn);
+      badge.textContent = isOn ? t('statValOn') : t('statValOff');
+    }
+    break;
+  }
+}
+
+// The /api/devices `power` field can be stale; fetch each device's live status
+// and refresh its card so the dashboard always shows the current state.
+async function refreshDeviceStatuses(devices) {
+  await Promise.all(devices.map(async d => {
+    try {
+      const res = await fetch(`${API_BASE}/api/status?id=${encodeURIComponent(d.id)}`, {
+        headers: sessionHeaders(),
+      });
+      if (!res.ok) return;
+      const s = await res.json();
+      if (s && s.power != null) {
+        const isOn = s.power === 'on' || s.power === true;
+        d.power = isOn ? 'on' : 'off';   // keep _lastDevices in sync for re-renders
+        updateDeviceCardStatus(d.id, isOn);
+      }
+    } catch (err) {
+      dbg.error('device status refresh failed →', d.id, err.name);
+    }
+  }));
+  dbg.session('device statuses refreshed');
 }
 
 // Delegate clicks on device cards
@@ -781,9 +819,15 @@ async function applySettings() {
     }
     if (data.status === 1) {
       showToast(t('toastSetSaved'), 'success', 1800);
-      // Echoes power, temp, fan → becomes the new applied baseline.
+      // Response echoes { power, temp, fan } — re-render the whole status
+      // display (grid + AC visual + adjust controls) so the UI reflects it.
       _applied = { temp: _settings.temp, fan: _settings.fan };
-      syncSettingsFromStatus(data);
+      if (data.power != null || data.temp != null || data.fan != null) {
+        renderACStatus(data);
+      } else {
+        // No echo → pull the authoritative state from the server.
+        fetchStatus();
+      }
     }
   } catch (err) {
     dbg.error('applySettings threw →', err.name, err.message);
